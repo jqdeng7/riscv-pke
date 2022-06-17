@@ -76,3 +76,25 @@ int fork() {
 void yield() {
   do_user_call(SYS_user_yield, 0, 0, 0, 0, 0, 0, 0);
 }
+
+//
+// add syscalls for uart IO @lab4_1
+// applications need to call uart_putchar to output a char to device
+//
+int uartputchar(char ch) {
+  return do_user_call(SYS_user_uart_putchar, ch, 0, 0, 0, 0, 0, 0);
+}
+
+//
+// applications need to call uart_getchar to get a char from device
+//
+int uartgetchar() {
+  return do_user_call(SYS_user_uart_getchar, 0, 0, 0, 0, 0, 0, 0);
+}
+
+
+
+// car
+int gpio_reg_write(char val) {
+  return do_user_call(SYS_user_gpio_reg_write, val, 0, 0, 0, 0, 0, 0);
+}
