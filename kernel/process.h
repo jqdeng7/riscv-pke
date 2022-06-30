@@ -99,4 +99,17 @@ extern process* current;
 // address of the first free page in our simple heap. added @lab2_2
 extern uint64 g_ufree_page;
 
+#define NSEM 10
+
+typedef struct semaphore {
+  int value;
+  process *wait_queue_head;
+}semaphore;
+
+int do_sem_new(int n);
+void wait(int i);
+void signal(int i);
+void insert_to_sem_queue(int i, process *proc);
+void wake_up(int i);
+
 #endif
