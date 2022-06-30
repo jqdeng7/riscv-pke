@@ -29,6 +29,10 @@ extern char trap_sec_start[];
 // process pool. added @lab3_1
 process procs[NPROC];
 
+int nsem = 0;
+// semaphore pool
+semaphore sems[NSEM];
+
 // current points to the currently running user-mode application.
 process* current = NULL;
 
@@ -213,4 +217,61 @@ int do_fork( process* parent)
   insert_to_ready_queue( child );
 
   return child->pid;
+}
+
+int do_sem_new(int n) {
+  if (nsem < NSEM)
+  {
+    sems[nsem].value = n;
+    return nsem++;
+  }
+  panic("Cannot find any free semaphore structure.\n");
+  return -1;
+}
+
+void wait(int i) {
+  assert(0 <= i && i < nsem);
+  sems[i].value--;
+  if (sems[i].value < 0) {
+    insert_to_sem_queue(i, current);
+    schedule();
+  }
+}
+
+void signal(int i) {
+  assert(0 <= i && i < nsem);
+  sems[i].value++;
+  if (sems[i].value <= 0) {
+    wake_up(i);
+  }
+}
+
+void insert_to_sem_queue(int i, process *proc) {
+
+  if( sems[i].wait_queue_head == NULL ){
+    proc->status = BLOCKED;
+    proc->queue_next = NULL;
+    sems[i].wait_queue_head = proc;
+    return;
+  }
+
+  process *p;
+
+  for( p=sems[i].wait_queue_head; p->queue_next!=NULL; p=p->queue_next )
+    if( p == proc ) return;
+
+  if( p==proc ) return;
+  p->queue_next = proc;
+  proc->status = BLOCKED;
+  proc->queue_next = NULL;
+
+  return;
+}
+
+void wake_up(int i) {
+  process *p =  sems[i].wait_queue_head;
+  if (p) {
+    sems[i].wait_queue_head = p->queue_next;
+    insert_to_ready_queue(p);
+  }
 }

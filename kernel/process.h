@@ -21,6 +21,9 @@ typedef struct trapframe_t {
 // riscv-pke kernel supports at most 32 processes
 #define NPROC 32
 
+// riscv-pke kernel supports at most 10 semaphores
+#define NSEM 10
+
 // possible status of a process
 enum proc_status {
   FREE,            // unused state
@@ -73,6 +76,11 @@ typedef struct process_t {
   int tick_count;
 }process;
 
+typedef struct semaphore {
+  int value;
+  process *wait_queue_head;
+}semaphore;
+
 // switch to run user app
 void switch_to(process*);
 
@@ -93,23 +101,16 @@ int free_process( process* proc );
 // fork a child from parent
 int do_fork(process* parent);
 
-// current running process
-extern process* current;
-
-// address of the first free page in our simple heap. added @lab2_2
-extern uint64 g_ufree_page;
-
-#define NSEM 10
-
-typedef struct semaphore {
-  int value;
-  process *wait_queue_head;
-}semaphore;
-
 int do_sem_new(int n);
 void wait(int i);
 void signal(int i);
 void insert_to_sem_queue(int i, process *proc);
 void wake_up(int i);
 
+
+// current running process
+extern process* current;
+
+// address of the first free page in our simple heap. added @lab2_2
+extern uint64 g_ufree_page;
 #endif

@@ -17,7 +17,7 @@
 
 #define SYS_user_sem_new (SYS_user_base + 6)
 #define SYS_user_sem_P (SYS_user_base + 7)
-#define SYS_user_Sem_V (SYS_user_base + 8)
+#define SYS_user_sem_V (SYS_user_base + 8)
 
 long do_syscall(long a0, long a1, long a2, long a3, long a4, long a5, long a6, long a7);
 

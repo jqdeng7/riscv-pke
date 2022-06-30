@@ -84,6 +84,29 @@ ssize_t sys_user_yield() {
 }
 
 //
+// kernel entry point of sem_new
+//
+int sys_user_sem_new(int n) {
+  return do_sem_new(n);
+}
+
+//
+// kernel entry point of sem_P
+//
+int sys_user_sem_P(int s) {
+  wait(s);
+  return 0;
+}
+
+//
+// kernel entry point of sem_V
+//
+int sys_user_sem_V(int s) {
+  signal(s);
+  return 0;
+}
+
+//
 // [a0]: the syscall number; [a1] ... [a7]: arguments to the syscalls.
 // returns the code of success, (e.g., 0 means success, fail for otherwise)
 //
