@@ -8,6 +8,10 @@
 #include "riscv.h"
 #include "spike_interface/spike_utils.h"
 
+char shstrtab_arr[SHSTRTAB_ARR_MAX];
+int func_num = 0;
+elf_sym symbols_arr[MAX_DEPTH + OTHER_FUNC_NUM]; // 除了调用的f函数，还有6个其他函数
+
 typedef struct elf_info_t {
   spike_file_t *f;
   process *p;
@@ -75,6 +79,39 @@ elf_status elf_load(elf_ctx *ctx) {
   return EL_OK;
 }
 
+elf_status elf_load_sect(elf_ctx *ctx) {
+  elf_sect_header sh_addr;
+  elf_sect_header sym_addr;
+  elf_sym symbol;
+
+  int i, off;
+
+  // find string section
+  for (i = 0, off = ctx->ehdr.shoff; i < ctx->ehdr.shnum; i++, off += sizeof(sh_addr)) {
+      if (elf_fpread(ctx, (void *)&sh_addr, sizeof(sh_addr), off) != sizeof(sh_addr)) return EL_EIO;
+      if (sh_addr.type == SHT_STRTAB && i != ctx->ehdr.shstrndx) break;
+  }
+  
+  // find symbol section
+  for (i = 0, off = ctx->ehdr.shoff; i < ctx->ehdr.shnum; i++, off += sizeof(sym_addr)) {
+      if (elf_fpread(ctx, (void *)&sym_addr, sizeof(sym_addr), off) != sizeof(sym_addr)) return EL_EIO;
+      if (sym_addr.type == SHT_SYMTAB) break;
+  }
+  
+  // 
+  for (i = 0, off = sym_addr.offset; i < sym_addr.size / sym_addr.entsize; i++, off += sizeof(symbol)){
+    if (elf_fpread(ctx, (void *)&symbol, sizeof(symbol), off) != sizeof(symbol)) return EL_EIO;
+    if (((symbol.st_info) & 0xf) == STT_FUNC){
+      symbols_arr[func_num] = symbol;
+      func_num++;
+    }
+  }
+  
+  if (elf_fpread(ctx, (void *)shstrtab_arr, sizeof(shstrtab_arr), sh_addr.offset) != sizeof(shstrtab_arr)) return EL_EIO;
+
+  return EL_OK;
+} 
+
 typedef union {
   uint64 buf[MAX_CMDLINE_ARGS];
   char *argv[MAX_CMDLINE_ARGS];
@@ -130,6 +167,8 @@ void load_bincode_from_host_elf(process *p) {
   // load elf. elf_load() is defined above.
   if (elf_load(&elfloader) != EL_OK) panic("Fail on loading elf.\n");
 
+  if (elf_load_sect(&elfloader) != EL_OK) panic("Fail on loading elf_sect.\n");
+
   // entry (virtual, also physical in lab1_x) address
   p->trapframe->epc = elfloader.ehdr.entry;
 
@@ -137,4 +176,15 @@ void load_bincode_from_host_elf(process *p) {
   spike_file_close( info.f );
 
   sprint("Application program entry point (virtual address): 0x%lx\n", p->trapframe->epc);
+}
+
+void backtrace(uint64 addr, uint64 depth) {
+    while(depth--)
+      for (int i = 0; i < func_num; i++)
+        if(symbols_arr[i].st_value == addr){
+          sprint("%s\n", shstrtab_arr + symbols_arr[i].st_name);
+          if (strcmp(shstrtab_arr + symbols_arr[i].st_name, "main") == 0) return;
+          addr += symbols_arr[i].st_size;
+          break;
+        }
 }
