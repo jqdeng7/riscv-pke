@@ -86,27 +86,28 @@ elf_status elf_load_sect(elf_ctx *ctx) {
 
   int i, off;
 
-  // find string section
+  // get string table section header
   for (i = 0, off = ctx->ehdr.shoff; i < ctx->ehdr.shnum; i++, off += sizeof(sh_addr)) {
-      if (elf_fpread(ctx, (void *)&sh_addr, sizeof(sh_addr), off) != sizeof(sh_addr)) return EL_EIO;
-      if (sh_addr.type == SHT_STRTAB && i != ctx->ehdr.shstrndx) break;
+    if (elf_fpread(ctx, (void *)&sh_addr, sizeof(sh_addr), off) != sizeof(sh_addr)) return EL_EIO;
+    if (sh_addr.type == SHT_STRTAB) break;
   }
   
-  // find symbol section
+  // get symbol table section header
   for (i = 0, off = ctx->ehdr.shoff; i < ctx->ehdr.shnum; i++, off += sizeof(sym_addr)) {
-      if (elf_fpread(ctx, (void *)&sym_addr, sizeof(sym_addr), off) != sizeof(sym_addr)) return EL_EIO;
-      if (sym_addr.type == SHT_SYMTAB) break;
+    if (elf_fpread(ctx, (void *)&sym_addr, sizeof(sym_addr), off) != sizeof(sym_addr)) return EL_EIO;
+    if (sym_addr.type == SHT_SYMTAB) break;
   }
   
-  // 
+  // get the element of symbol table whose type is STT_FUNC
   for (i = 0, off = sym_addr.offset; i < sym_addr.size / sym_addr.entsize; i++, off += sizeof(symbol)){
     if (elf_fpread(ctx, (void *)&symbol, sizeof(symbol), off) != sizeof(symbol)) return EL_EIO;
-    if (((symbol.st_info) & 0xf) == STT_FUNC){
+    if ((ELF64_ST_TYPE(symbol.st_info)) == STT_FUNC){
       symbols_arr[func_num] = symbol;
       func_num++;
     }
   }
   
+  // get string section
   if (elf_fpread(ctx, (void *)shstrtab_arr, sizeof(shstrtab_arr), sh_addr.offset) != sizeof(shstrtab_arr)) return EL_EIO;
 
   return EL_OK;

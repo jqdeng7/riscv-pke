@@ -67,6 +67,7 @@ typedef struct elf_sym_t {
 #define MAX_DEPTH 20
 #define OTHER_FUNC_NUM 6
 #define SHSTRTAB_ARR_MAX 400
+#define ELF64_ST_TYPE(info) ((info) & 0xf)
 
 #define ELF_MAGIC 0x464C457FU  // "\x7FELF" in little endian
 #define ELF_PROG_LOAD 1
