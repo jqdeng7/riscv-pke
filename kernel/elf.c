@@ -10,7 +10,7 @@
 
 char shstrtab_arr[SHSTRTAB_ARR_MAX];
 int func_num = 0;
-elf_sym symbols_arr[MAX_DEPTH + OTHER_FUNC_NUM]; // 除了调用的f函数，还有6个其他函数
+elf_sym symbols_arr[MAX_DEPTH + OTHER_FUNC_NUM];
 
 typedef struct elf_info_t {
   spike_file_t *f;

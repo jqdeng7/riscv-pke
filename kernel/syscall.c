@@ -32,7 +32,7 @@ ssize_t sys_user_exit(uint64 code) {
 }
 
 ssize_t sys_user_backtrace(uint64 depth) {
-  uint64 entry_addr = *((uint64 *)current->trapframe->regs.s0 + 1); // 0x8100000e
+  uint64 entry_addr = *((uint64 *)current->trapframe->regs.s0 + 1);
   entry_addr -= 0xe;
   backtrace(entry_addr, depth);
   return 0;
